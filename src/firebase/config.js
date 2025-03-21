@@ -16,7 +16,6 @@ import {
   query,
   where,
   getDocs,
-  enableIndexedDbPersistence,
   CACHE_SIZE_UNLIMITED,
   initializeFirestore,
   persistentLocalCache,
@@ -45,21 +44,6 @@ const db = initializeFirestore(app, {
     cacheSizeBytes: CACHE_SIZE_UNLIMITED,
   }),
 });
-
-// Enable offline persistence
-try {
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === "failed-precondition") {
-      // Multiple tabs open, persistence can only be enabled in one tab at a time.
-      console.log("Persistence failed: Multiple tabs open");
-    } else if (err.code === "unimplemented") {
-      // The current browser doesn't support persistence
-      console.log("Persistence not supported by browser");
-    }
-  });
-} catch (error) {
-  console.error("Error enabling persistence:", error);
-}
 
 // Configure Google Provider with additional parameters
 const googleProvider = new GoogleAuthProvider();
