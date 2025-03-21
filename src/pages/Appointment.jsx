@@ -1,18 +1,25 @@
 import { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { assets } from "../assets/assets";
 import RelatedDoctors from "../components/RelatedDoctors";
 
 const Appointment = () => {
   const { docId } = useParams();
-  const { doctors, currencySymbol } = useContext(AppContext);
+  const navigate = useNavigate();
+  const { doctors, currencySymbol, user, bookAppointment, error, loading } =
+    useContext(AppContext);
   const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
   const [docInfo, setDocInfo] = useState(null);
   const [docSlots, setDocSlots] = useState([]);
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState("");
+  const [bookingStatus, setBookingStatus] = useState({
+    loading: false,
+    error: null,
+    success: false,
+  });
 
   const fetchDocInfo = async () => {
     const docInfo = doctors.find((doc) => doc._id === docId);
@@ -68,15 +75,52 @@ const Appointment = () => {
     }
   };
 
-  const bookAppointment = async () => {
-    const date = docSlots[slotIndex][0].datetime;
+  const handleBookAppointment = async () => {
+    try {
+      if (!user) {
+        navigate("/login");
+        return;
+      }
 
-    let day = date.getDate();
-    let month = date.getMonth() + 1;
-    let year = date.getFullYear();
+      if (!slotTime || !docSlots[slotIndex] || !docSlots[slotIndex][0]) {
+        setBookingStatus({
+          loading: false,
+          error: "Please select a time slot",
+          success: false,
+        });
+        return;
+      }
 
-    const slotDate = `${day}_${month}_${year}`;
-    console.log(slotDate, slotTime);
+      setBookingStatus({ loading: true, error: null, success: false });
+
+      const result = await bookAppointment(
+        docId,
+        docSlots[slotIndex][0].datetime,
+        slotTime
+      );
+
+      if (result.success) {
+        setBookingStatus({
+          loading: false,
+          error: null,
+          success: true,
+        });
+        // Navigate to appointments page after successful booking
+        navigate("/my-appointments");
+      } else {
+        setBookingStatus({
+          loading: false,
+          error: result.error || "Failed to book appointment",
+          success: false,
+        });
+      }
+    } catch (error) {
+      setBookingStatus({
+        loading: false,
+        error: error.message || "Failed to book appointment",
+        success: false,
+      });
+    }
   };
 
   useEffect(() => {
@@ -90,6 +134,14 @@ const Appointment = () => {
       getAvailableSlots();
     }
   }, [docInfo]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return docInfo ? (
     <div>
@@ -141,8 +193,21 @@ const Appointment = () => {
       {/* Booking slots */}
       <div className="sm:ml-72 sm:pl-4 mt-4 font-medium text-gray-700">
         <p>Booking slots</p>
+
+        {(error || bookingStatus.error) && (
+          <div className="w-full bg-red-50 text-red-500 p-3 rounded-lg mt-2">
+            {error || bookingStatus.error}
+          </div>
+        )}
+
+        {bookingStatus.success && (
+          <div className="w-full bg-green-50 text-green-500 p-3 rounded-lg mt-2">
+            Appointment booked successfully!
+          </div>
+        )}
+
         <div className="flex gap-3 items-center w-full overflow-x-scroll mt-4">
-          {docSlots.length &&
+          {docSlots.length > 0 &&
             docSlots.map((item, index) => (
               <div
                 onClick={() => setSlotIndex(index)}
@@ -160,7 +225,7 @@ const Appointment = () => {
         </div>
 
         <div className="flex items-center gap-3 w-full overflow-x-scroll mt-4">
-          {docSlots.length &&
+          {docSlots.length > 0 &&
             docSlots[slotIndex].map((item, index) => (
               <p
                 onClick={() => setSlotTime(item.time)}
@@ -177,10 +242,15 @@ const Appointment = () => {
         </div>
 
         <button
-          onClick={bookAppointment}
-          className="bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6"
+          onClick={handleBookAppointment}
+          disabled={bookingStatus.loading || !slotTime}
+          className={`bg-primary text-white text-sm font-light px-14 py-3 rounded-full my-6 ${
+            bookingStatus.loading || !slotTime
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-primary/90"
+          }`}
         >
-          Book an appointment
+          {bookingStatus.loading ? "Booking..." : "Book an appointment"}
         </button>
       </div>
 
