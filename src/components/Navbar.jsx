@@ -18,116 +18,163 @@ const Navbar = () => {
   };
 
   return (
-    <div className="flex items-center justify-between text-sm py-4 mb-5 border-b border-b-gray-400">
-      <img
-        onClick={() => navigate("/")}
-        className="w-44 cursor-pointer"
-        src={assets.logo}
-        alt=""
-      />
-      <ul className="md:flex items-start gap-5 font-medium hidden">
-        <NavLink to="/">
-          <li className="py-1">HOME</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-        <NavLink to="/doctors">
-          <li className="py-1">ALL DOCTORS</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-        <NavLink to="/about">
-          <li className="py-1">ABOUT</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-        <NavLink to="/contact">
-          <li className="py-1">CONTACT</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-      </ul>
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <div onClick={() => navigate("/")} className="flex items-center space-x-2 cursor-pointer">
+            <img className="w-8 h-8" src={assets.logo} alt="HealthHub Logo" />
+            <span className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+              HealthHub
+            </span>
+          </div>
 
-      <div className="flex items-center gap-4">
-        {user ? (
-          <div className="flex items-center gap-2 cursor-pointer group relative">
-            <img
-              className="w-8 h-8 rounded-full"
-              src={user.photoURL || assets.profile_pic}
-              alt={user.displayName || "Profile"}
-            />
-            <img className="w-2.5" src={assets.dropdown_icon} alt="" />
-            <div className="absolute top-0 right-0 pt-14 text-base font-medium text-gray-600 z-20 hidden group-hover:block">
-              <div className="min-w-48 bg-stone-100 rounded flex flex-col gap-4 p-4">
-                <p
-                  onClick={() => navigate("/my-profile")}
-                  className="hover:text-black cursor-pointer"
+          {/* Desktop Navigation */}
+          <ul className="hidden md:flex items-center space-x-8">
+            <NavLink to="/" className={({ isActive }) => 
+              isActive ? "text-blue-600 font-medium" : "text-gray-600 hover:text-blue-600 transition-colors"
+            }>
+              Home
+            </NavLink>
+            <NavLink to="/doctors" className={({ isActive }) => 
+              isActive ? "text-blue-600 font-medium" : "text-gray-600 hover:text-blue-600 transition-colors"
+            }>
+              Find Doctors
+            </NavLink>
+            <NavLink to="/about" className={({ isActive }) => 
+              isActive ? "text-blue-600 font-medium" : "text-gray-600 hover:text-blue-600 transition-colors"
+            }>
+              About
+            </NavLink>
+            <NavLink to="/contact" className={({ isActive }) => 
+              isActive ? "text-blue-600 font-medium" : "text-gray-600 hover:text-blue-600 transition-colors"
+            }>
+              Contact
+            </NavLink>
+          </ul>
+
+          {/* User Menu */}
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="flex items-center space-x-2 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-full transition-colors"
                 >
-                  My Profile
-                </p>
-                <p
-                  onClick={() => navigate("/my-appointments")}
-                  className="hover:text-black cursor-pointer"
-                >
-                  My Appointments
-                </p>
-                <p
-                  onClick={handleLogout}
-                  className="hover:text-black cursor-pointer"
-                >
-                  Logout
-                </p>
+                  <img
+                    className="w-8 h-8 rounded-full"
+                    src={user.photoURL || "https://ui-avatars.com/api/?name=" + user.email}
+                    alt={user.email}
+                  />
+                  <span className="text-sm text-gray-700">{user.email}</span>
+                </button>
+
+                {showMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2">
+                    <button
+                      onClick={() => {
+                        navigate("/my-profile");
+                        setShowMenu(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      My Profile
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate("/my-appointments");
+                        setShowMenu(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      My Appointments
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setShowMenu(false);
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
+            ) : (
+              <button
+                onClick={() => navigate("/login")}
+                className="inline-flex items-center px-4 py-2 rounded-full text-blue-600 hover:text-blue-700 font-medium hover:bg-blue-50 transition-colors"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Navigation */}
+        {showMenu && (
+          <div className="md:hidden pt-4 pb-3 border-t border-gray-200">
+            <div className="space-y-1">
+              <NavLink
+                to="/"
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md ${
+                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"
+                  }`
+                }
+                onClick={() => setShowMenu(false)}
+              >
+                Home
+              </NavLink>
+              <NavLink
+                to="/doctors"
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md ${
+                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"
+                  }`
+                }
+                onClick={() => setShowMenu(false)}
+              >
+                Find Doctors
+              </NavLink>
+              <NavLink
+                to="/about"
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md ${
+                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"
+                  }`
+                }
+                onClick={() => setShowMenu(false)}
+              >
+                About
+              </NavLink>
+              <NavLink
+                to="/contact"
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md ${
+                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"
+                  }`
+                }
+                onClick={() => setShowMenu(false)}
+              >
+                Contact
+              </NavLink>
             </div>
           </div>
-        ) : (
-          <button
-            onClick={() => navigate("/login")}
-            className="bg-primary text-white px-8 py-3 rounded-full font-light hidden md:block"
-          >
-            Sign In
-          </button>
         )}
-        <img
-          onClick={() => setShowMenu(true)}
-          className="w-6 md:hidden"
-          src={assets.menu_icon}
-          alt=""
-        />
-
-        {/* ---- Mobile Menu ---- */}
-        <div
-          className={`md:hidden fixed right-0 top-0 bottom-0 z-20 overflow-hidden bg-white transition-all ${
-            showMenu ? "w-full" : "w-0"
-          }`}
-        >
-          <div className="flex items-center justify-between px-5 py-6">
-            <img src={assets.logo} className="w-36" alt="" />
-            <img
-              onClick={() => setShowMenu(false)}
-              src={assets.cross_icon}
-              className="w-7"
-              alt=""
-            />
-          </div>
-          <ul className="flex flex-col items-center gap-2 mt-5 px-5 text-lg font-medium">
-            <NavLink onClick={() => setShowMenu(false)} to="/">
-              <p className="px-4 py-2 rounded full inline-block">HOME</p>
-            </NavLink>
-            <NavLink onClick={() => setShowMenu(false)} to="/doctors">
-              <p className="px-4 py-2 rounded full inline-block">ALL DOCTORS</p>
-            </NavLink>
-            <NavLink onClick={() => setShowMenu(false)} to="/about">
-              <p className="px-4 py-2 rounded full inline-block">ABOUT</p>
-            </NavLink>
-            <NavLink onClick={() => setShowMenu(false)} to="/contact">
-              <p className="px-4 py-2 rounded full inline-block">CONTACT</p>
-            </NavLink>
-            {!user && (
-              <NavLink onClick={() => setShowMenu(false)} to="/login">
-                <p className="px-4 py-2 rounded full inline-block">SIGN IN</p>
-              </NavLink>
-            )}
-          </ul>
-        </div>
       </div>
-    </div>
+    </nav>
   );
 };
 

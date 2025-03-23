@@ -2,37 +2,58 @@ import { assets } from "../assets/assets";
 
 const Header = () => {
   return (
-    <div className="flex flex-col md:flex-row flex-wrap bg-primary rounded-lg px-6 md:px-10 lg:px-20 ">
-      {/* --------- Header Left --------- */}
-      <div className="md:w-1/2 flex flex-col items-start justify-center gap-4 py-10 m-auto md:py-[10vw] md:mb-[-30px]">
-        <p className="text-3xl md:text-4xl lg:text-5xl text-white font-semibold leading-tight md:leading-tight lg:leading-tight">
-          Book Appointment <br /> With Trusted Doctors
-        </p>
-        <div className="flex flex-col md:flex-row items-center gap-3 text-white text-sm font-light">
-          <img className="w-28" src={assets.group_profiles} alt="" />
-          <p>
-            Simply browse through our extensive list of trusted doctors,{" "}
-            <br className="hidden sm:block" /> schedule your appointment
-            hassle-free.
+    <div className="relative overflow-hidden py-16 sm:py-24">
+      <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+        {/* Left Content */}
+        <div className="flex-1 text-center lg:text-left">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
+            Your Health, <br />
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500">
+              Our Priority
+            </span>
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0">
+            Connect with trusted healthcare professionals and book appointments with ease.
+            Your well-being is just a click away.
           </p>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start mb-12">
+            <a
+              href="#speciality"
+              className="inline-flex items-center px-8 py-3 rounded-full text-white bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+            >
+              Book Appointment
+              <img className="w-4 ml-2" src={assets.arrow_icon} alt="" />
+            </a>
+            
+            <div className="flex items-center gap-4">
+              <img 
+                className="w-32 h-auto" 
+                src={assets.group_profiles} 
+                alt="Doctor profiles" 
+              />
+              <div className="text-sm text-gray-600">
+                <span className="block font-semibold">1000+ Doctors</span>
+                <span>Ready to help you</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <a
-          href="#speciality"
-          className="flex items-center gap-2 bg-white px-8 py-3 rounded-full text-gray-600 text-sm m-auto md:m-0 hover:scale-105 transition-all duration-300"
-        >
-          Book appointment{" "}
-          <img className="w-3" src={assets.arrow_icon} alt="" />
-        </a>
+
+        {/* Right Content */}
+        <div className="flex-1 relative">
+          <div className="absolute inset-0 bg-gradient-to-tr from-blue-100 to-cyan-100 rounded-3xl transform rotate-3"></div>
+          <img
+            className="relative rounded-3xl shadow-2xl transform -rotate-3 hover:rotate-0 transition-transform duration-500"
+            src={assets.header_img}
+            alt="Doctor consultation"
+          />
+        </div>
       </div>
 
-      {/* --------- Header Right --------- */}
-      <div className="md:w-1/2 relative">
-        <img
-          className="w-full md:absolute bottom-0 h-auto rounded-lg"
-          src={assets.header_img}
-          alt=""
-        />
-      </div>
+      {/* Background Elements */}
+      <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-cyan-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+      <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-96 h-96 bg-blue-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
     </div>
   );
 };

@@ -2,12 +2,14 @@ import { initializeApp } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
 } from "firebase/auth";
 import {
+  getFirestore,
   collection,
   addDoc,
   doc,
@@ -17,9 +19,7 @@ import {
   where,
   getDocs,
   CACHE_SIZE_UNLIMITED,
-  initializeFirestore,
-  persistentLocalCache,
-  persistentSingleTabManager,
+  enableIndexedDbPersistence,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -37,15 +37,15 @@ const app = initializeApp(firebaseConfig);
 // Initialize Auth
 const auth = getAuth(app);
 
-// Initialize Firestore with persistence
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentSingleTabManager(),
-    cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-  }),
+// Initialize Firestore
+const db = getFirestore(app);
+
+// Enable offline persistence
+enableIndexedDbPersistence(db).catch((err) => {
+  console.error("Firestore persistence error:", err);
 });
 
-// Configure Google Provider with additional parameters
+// Configure Google Provider
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: "select_account",
@@ -53,18 +53,19 @@ googleProvider.setCustomParameters({
 
 export {
   auth,
+  db,
   googleProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  db,
+  signOut,
+  onAuthStateChanged,
   collection,
   addDoc,
   doc,
   setDoc,
+  deleteDoc,
   query,
   where,
   getDocs,
-  deleteDoc,
 };

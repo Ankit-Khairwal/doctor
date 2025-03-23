@@ -2,22 +2,41 @@ import { createContext, useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { doctors } from "../assets/assets";
 import {
-  auth,
-  googleProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  db,
-  doc,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
+import {
+  getFirestore,
   collection,
   addDoc,
+  doc,
+  setDoc,
+  deleteDoc,
   query,
   where,
   getDocs,
-  deleteDoc,
-} from "../firebase/config";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+} from "firebase/firestore";
+import { initializeApp } from "firebase/app";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB-7rFyGAB9w6_-rePNVkcawUeaOQpoKII",
+  authDomain: "doctor-6a04e.firebaseapp.com",
+  projectId: "doctor-6a04e",
+  storageBucket: "doctor-6a04e.appspot.com",
+  messagingSenderId: "627869831116",
+  appId: "1:627869831116:web:0b2bf58f185c300560d769",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
 
 export const AppContext = createContext();
 
@@ -49,303 +68,198 @@ const AppContextProvider = (props) => {
     }
   };
 
-  // Handle redirect result
+  // Handle auth state changes
   useEffect(() => {
-    const handleRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          console.log("Redirect sign-in successful:", result.user);
-          setUser(result.user);
-        }
-      } catch (error) {
-        console.error("Redirect sign-in error:", error);
-        setError(error.message);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
+      if (user) {
+        fetchUserAppointments(user.uid);
       }
-    };
-
-    handleRedirectResult();
-  }, []);
-
-  // Listen for auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (currentUser) => {
-        console.log("Auth state changed:", currentUser);
-        setUser(currentUser);
-        setLoading(false);
-        setError(null);
-
-        // Fetch appointments when user changes
-        if (currentUser) {
-          fetchUserAppointments(currentUser.uid);
-        } else {
-          setAppointments([]);
-        }
-      },
-      (error) => {
-        console.error("Auth state error:", error);
-        setError("Authentication error. Please try signing in again.");
-        setLoading(false);
-      }
-    );
-
+    });
     return () => unsubscribe();
   }, []);
 
-  const fetchUserAppointments = async (userId) => {
-    try {
-      setLoading(true);
-      const fetchAppointments = async () => {
-        const appointmentsRef = collection(db, "appointments");
-        const q = query(appointmentsRef, where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
-
-        const appointmentsList = [];
-        querySnapshot.forEach((doc) => {
-          appointmentsList.push({ id: doc.id, ...doc.data() });
-        });
-
-        return appointmentsList;
-      };
-
-      const appointmentsList = await retryOperation(fetchAppointments);
-      setAppointments(appointmentsList);
-    } catch (error) {
-      console.error("Error fetching appointments:", error);
-      setError("Failed to load appointments. Please try refreshing the page.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const bookAppointment = async (doctorId, dateTime, slotTime) => {
-    try {
-      if (!user) {
-        throw new Error("Please sign in to book an appointment");
-      }
-
-      setLoading(true);
-      setError(null);
-
-      const createAppointment = async () => {
-        // Format the date for storage
-        const appointmentDate = new Date(dateTime);
-        const formattedDate = `${appointmentDate.getDate()}_${
-          appointmentDate.getMonth() + 1
-        }_${appointmentDate.getFullYear()}`;
-
-        // Check if slot is already booked
-        const appointmentsRef = collection(db, "appointments");
-        const q = query(
-          appointmentsRef,
-          where("doctorId", "==", doctorId),
-          where("date", "==", formattedDate),
-          where("time", "==", slotTime)
-        );
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-          throw new Error(
-            "This slot is already booked. Please select another time."
-          );
-        }
-
-        // Create new appointment
-        const appointmentData = {
-          userId: user.uid,
-          doctorId,
-          date: formattedDate,
-          time: slotTime,
-          status: "pending",
-          createdAt: new Date().toISOString(),
-          doctorInfo: doctors.find((doc) => doc._id === doctorId),
-          patientInfo: {
-            name: user.displayName || "Anonymous",
-            email: user.email,
-            photoURL: user.photoURL,
-          },
-        };
-
-        const docRef = await addDoc(appointmentsRef, appointmentData);
-        return { docRef, appointmentData };
-      };
-
-      const { docRef, appointmentData } = await retryOperation(
-        createAppointment
-      );
-
-      // Add the new appointment to state
-      setAppointments((prev) => [
-        ...prev,
-        { id: docRef.id, ...appointmentData },
-      ]);
-
-      return { success: true, appointmentId: docRef.id };
-    } catch (error) {
-      console.error("Error booking appointment:", error);
-      const errorMessage =
-        error.code === "permission-denied"
-          ? "You don't have permission to book appointments. Please sign in again."
-          : error.message || "Failed to book appointment";
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cancelAppointment = async (appointmentId) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const cancelOp = async () => {
-        await deleteDoc(doc(db, "appointments", appointmentId));
-      };
-
-      await retryOperation(cancelOp);
-
-      // Remove the appointment from state
-      setAppointments((prev) => prev.filter((app) => app.id !== appointmentId));
-
-      return { success: true };
-    } catch (error) {
-      console.error("Error cancelling appointment:", error);
-      const errorMessage =
-        error.code === "permission-denied"
-          ? "You don't have permission to cancel this appointment."
-          : error.message || "Failed to cancel appointment";
-      setError(errorMessage);
-      return { success: false, error: errorMessage };
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Sign in with Google
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
-      setError(null);
-      console.log("Starting Google sign in...");
-      await signInWithRedirect(auth, googleProvider);
+      clearError();
+      const result = await signInWithPopup(auth, googleProvider);
+      
+      // Create or update user document in Firestore
+      const userRef = doc(db, "users", result.user.uid);
+      await setDoc(userRef, {
+        email: result.user.email,
+        name: result.user.displayName,
+        photoURL: result.user.photoURL,
+        lastLogin: new Date(),
+      }, { merge: true });
+
+      return result.user;
     } catch (error) {
-      console.error("Error signing in with Google:", error);
-      setError(error.message || "Failed to sign in with Google");
+      console.error("Google sign in error:", error);
+      setError(error.message);
+      throw error;
+    } finally {
       setLoading(false);
     }
   };
 
+  // Sign up with email/password
   const signUpWithEmail = async (email, password) => {
     try {
       setLoading(true);
-      setError(null);
+      clearError();
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Create user document in Firestore
+      const userRef = doc(db, "users", result.user.uid);
+      await setDoc(userRef, {
+        email: result.user.email,
+        createdAt: new Date(),
+        lastLogin: new Date(),
+      });
 
-      if (!email || !password) {
-        throw new Error("Email and password are required");
-      }
-
-      if (password.length < 6) {
-        throw new Error("Password should be at least 6 characters");
-      }
-
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      setUser(result.user);
+      return result.user;
     } catch (error) {
-      console.error("Error signing up with email:", error);
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          setError("An account with this email already exists");
-          break;
-        case "auth/invalid-email":
-          setError("Please enter a valid email address");
-          break;
-        case "auth/weak-password":
-          setError("Password should be at least 6 characters");
-          break;
-        case "auth/network-request-failed":
-          setError("Network error. Please check your connection");
-          break;
-        default:
-          setError(error.message || "Failed to create account");
-      }
+      console.error("Email sign up error:", error);
+      setError(error.message);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  // Sign in with email/password
   const signInWithEmail = async (email, password) => {
     try {
       setLoading(true);
-      setError(null);
-
-      if (!email || !password) {
-        throw new Error("Email and password are required");
-      }
-
+      clearError();
       const result = await signInWithEmailAndPassword(auth, email, password);
-      setUser(result.user);
+      
+      // Update last login in Firestore
+      const userRef = doc(db, "users", result.user.uid);
+      await setDoc(userRef, {
+        lastLogin: new Date(),
+      }, { merge: true });
+
+      return result.user;
     } catch (error) {
-      console.error("Error signing in with email:", error);
-      switch (error.code) {
-        case "auth/invalid-email":
-          setError("Please enter a valid email address");
-          break;
-        case "auth/user-not-found":
-        case "auth/wrong-password":
-        case "auth/invalid-credential":
-          setError("Invalid email or password");
-          break;
-        case "auth/user-disabled":
-          setError("This account has been disabled");
-          break;
-        case "auth/too-many-requests":
-          setError("Too many failed attempts. Please try again later");
-          break;
-        case "auth/network-request-failed":
-          setError("Network error. Please check your connection");
-          break;
-        default:
-          setError(error.message || "Failed to sign in");
-      }
+      console.error("Email sign in error:", error);
+      setError(error.message);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  // Sign out
   const logout = async () => {
     try {
       setLoading(true);
-      setError(null);
+      clearError();
       await signOut(auth);
-      setUser(null);
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("Sign out error:", error);
       setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Book appointment
+  const bookAppointment = async (doctorId, appointmentData) => {
+    if (!user) {
+      setError("Please sign in to book an appointment");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      clearError();
+
+      const appointmentRef = await addDoc(collection(db, "appointments"), {
+        userId: user.uid,
+        doctorId,
+        ...appointmentData,
+        createdAt: new Date(),
+        status: "pending",
+      });
+
+      // Fetch the updated appointments
+      await fetchUserAppointments(user.uid);
+      return appointmentRef;
+    } catch (error) {
+      console.error("Booking error:", error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch user appointments
+  const fetchUserAppointments = async (userId) => {
+    try {
+      setLoading(true);
+      clearError();
+
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("userId", "==", userId)
+      );
+
+      const querySnapshot = await getDocs(appointmentsQuery);
+      const appointmentsList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setAppointments(appointmentsList);
+      return appointmentsList;
+    } catch (error) {
+      console.error("Fetch appointments error:", error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cancel appointment
+  const cancelAppointment = async (appointmentId) => {
+    try {
+      setLoading(true);
+      clearError();
+
+      await deleteDoc(doc(db, "appointments", appointmentId));
+      await fetchUserAppointments(user.uid);
+    } catch (error) {
+      console.error("Cancel appointment error:", error);
+      setError(error.message);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
   const value = {
-    doctors,
-    currencySymbol,
     user,
     loading,
     error,
-    clearError,
+    doctors,
+    appointments,
+    currencySymbol,
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,
     logout,
-    appointments,
+    clearError,
     bookAppointment,
     cancelAppointment,
+    fetchUserAppointments,
   };
 
   return (
