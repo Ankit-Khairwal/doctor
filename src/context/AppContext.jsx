@@ -111,6 +111,8 @@ const AppContextProvider = (props) => {
     try {
       setLoading(true);
       clearError();
+
+      // Create the user account
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
       // Create user document in Firestore
@@ -119,12 +121,34 @@ const AppContextProvider = (props) => {
         email: result.user.email,
         createdAt: new Date(),
         lastLogin: new Date(),
+        role: "patient",
+        displayName: email.split("@")[0], // Set a default display name
       });
 
       return result.user;
     } catch (error) {
       console.error("Email sign up error:", error);
-      setError(error.message);
+      let errorMessage = "Failed to create account";
+      
+      // Handle specific Firebase auth errors
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          errorMessage = "This email is already registered. Please try logging in.";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "Invalid email address.";
+          break;
+        case "auth/operation-not-allowed":
+          errorMessage = "Email/password accounts are not enabled. Please contact support.";
+          break;
+        case "auth/weak-password":
+          errorMessage = "Password is too weak. Please use at least 6 characters.";
+          break;
+        default:
+          errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
       throw error;
     } finally {
       setLoading(false);
