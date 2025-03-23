@@ -172,24 +172,25 @@ const AppContextProvider = (props) => {
   // Book appointment
   const bookAppointment = async (doctorId, appointmentData) => {
     if (!user) {
-      setError("Please sign in to book an appointment");
-      return;
+      throw new Error("Please sign in to book an appointment");
     }
 
     try {
       setLoading(true);
       clearError();
 
+      // Create appointment document in Firestore
       const appointmentRef = await addDoc(collection(db, "appointments"), {
+        ...appointmentData,
         userId: user.uid,
         doctorId,
-        ...appointmentData,
-        createdAt: new Date(),
         status: "pending",
+        createdAt: new Date(),
       });
 
       // Fetch the updated appointments
       await fetchUserAppointments(user.uid);
+      
       return appointmentRef;
     } catch (error) {
       console.error("Booking error:", error);
