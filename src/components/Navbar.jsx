@@ -1,12 +1,12 @@
-import { useState, useContext } from "react";
-import { assets } from "../assets/assets";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
+import { assets } from "../assets/assets";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { user, logout } = useContext(AppContext);
-  const [showMenu, setShowMenu] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -17,163 +17,192 @@ const Navbar = () => {
     }
   };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <div onClick={() => navigate("/")} className="flex items-center space-x-2 cursor-pointer">
-            <img className="w-8 h-8" src={assets.logo} alt="HealthHub Logo" />
-            <span className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-              HealthHub
-            </span>
-          </div>
-
-          {/* Desktop Navigation */}
-          <ul className="hidden md:flex items-center space-x-8">
-            <NavLink to="/" className={({ isActive }) => 
-              isActive ? "text-blue-600 font-medium" : "text-gray-600 hover:text-blue-600 transition-colors"
-            }>
-              Home
-            </NavLink>
-            <NavLink to="/doctors" className={({ isActive }) => 
-              isActive ? "text-blue-600 font-medium" : "text-gray-600 hover:text-blue-600 transition-colors"
-            }>
-              Find Doctors
-            </NavLink>
-            <NavLink to="/about" className={({ isActive }) => 
-              isActive ? "text-blue-600 font-medium" : "text-gray-600 hover:text-blue-600 transition-colors"
-            }>
-              About
-            </NavLink>
-            <NavLink to="/contact" className={({ isActive }) => 
-              isActive ? "text-blue-600 font-medium" : "text-gray-600 hover:text-blue-600 transition-colors"
-            }>
-              Contact
-            </NavLink>
-          </ul>
-
-          {/* User Menu */}
-          <div className="flex items-center space-x-4">
-            {user ? (
-              <div className="relative">
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="flex items-center space-x-2 bg-gray-50 hover:bg-gray-100 px-4 py-2 rounded-full transition-colors"
-                >
-                  <img
-                    className="w-8 h-8 rounded-full"
-                    src={user.photoURL || "https://ui-avatars.com/api/?name=" + user.email}
-                    alt={user.email}
-                  />
-                  <span className="text-sm text-gray-700">{user.email}</span>
-                </button>
-
-                {showMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2">
-                    <button
-                      onClick={() => {
-                        navigate("/my-profile");
-                        setShowMenu(false);
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      My Profile
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigate("/my-appointments");
-                        setShowMenu(false);
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      My Appointments
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        setShowMenu(false);
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={() => navigate("/login")}
-                className="inline-flex items-center px-4 py-2 rounded-full text-blue-600 hover:text-blue-700 font-medium hover:bg-blue-50 transition-colors"
-              >
-                Sign In
-              </button>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {showMenu && (
-          <div className="md:hidden pt-4 pb-3 border-t border-gray-200">
-            <div className="space-y-1">
-              <NavLink
+    <nav className="bg-white shadow">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <Link to="/" className="flex-shrink-0 flex items-center">
+              <img className="h-8 w-auto" src={assets.logo} alt="HealthHub" />
+            </Link>
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <Link
                 to="/"
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded-md ${
-                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"
-                  }`
-                }
-                onClick={() => setShowMenu(false)}
+                className="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-blue-600"
               >
                 Home
-              </NavLink>
-              <NavLink
+              </Link>
+              <Link
                 to="/doctors"
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded-md ${
-                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"
-                  }`
-                }
-                onClick={() => setShowMenu(false)}
+                className="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-blue-600"
               >
-                Find Doctors
-              </NavLink>
-              <NavLink
+                Doctors
+              </Link>
+              <Link
                 to="/about"
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded-md ${
-                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"
-                  }`
-                }
-                onClick={() => setShowMenu(false)}
+                className="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-blue-600"
               >
                 About
-              </NavLink>
-              <NavLink
+              </Link>
+              <Link
                 to="/contact"
-                className={({ isActive }) =>
-                  `block px-3 py-2 rounded-md ${
-                    isActive ? "bg-blue-50 text-blue-600" : "text-gray-600 hover:bg-gray-50"
-                  }`
-                }
-                onClick={() => setShowMenu(false)}
+                className="inline-flex items-center px-1 pt-1 text-gray-900 hover:text-blue-600"
               >
                 Contact
-              </NavLink>
+              </Link>
             </div>
           </div>
-        )}
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/my-appointments"
+                  className="text-gray-900 hover:text-blue-600"
+                >
+                  My Appointments
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/login"
+                  className="text-gray-900 hover:text-blue-600"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
+          </div>
+          <div className="-mr-2 flex items-center sm:hidden">
+            <button
+              onClick={toggleMenu}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+            >
+              <span className="sr-only">Open main menu</span>
+              {!isMenuOpen ? (
+                <svg
+                  className="block h-6 w-6"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="block h-6 w-6"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Mobile menu */}
+      {isMenuOpen && (
+        <div className="sm:hidden">
+          <div className="pt-2 pb-3 space-y-1">
+            <Link
+              to="/"
+              className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              onClick={toggleMenu}
+            >
+              Home
+            </Link>
+            <Link
+              to="/doctors"
+              className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              onClick={toggleMenu}
+            >
+              Doctors
+            </Link>
+            <Link
+              to="/about"
+              className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              onClick={toggleMenu}
+            >
+              About
+            </Link>
+            <Link
+              to="/contact"
+              className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              onClick={toggleMenu}
+            >
+              Contact
+            </Link>
+            {user ? (
+              <>
+                <Link
+                  to="/my-appointments"
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  onClick={toggleMenu}
+                >
+                  My Appointments
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    toggleMenu();
+                  }}
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  onClick={toggleMenu}
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  onClick={toggleMenu}
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </nav>
   );
 };

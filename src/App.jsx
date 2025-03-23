@@ -14,8 +14,8 @@ import AppContextProvider from "./context/AppContext";
 
 function App() {
   return (
-    <Router>
-      <AppContextProvider>
+    <AppContextProvider>
+      <Router>
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Navbar />
@@ -36,8 +36,8 @@ function App() {
             <Footer />
           </div>
         </div>
-      </AppContextProvider>
-    </Router>
+      </Router>
+    </AppContextProvider>
   );
 }
 
