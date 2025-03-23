@@ -20,19 +20,43 @@ const AppContextProvider = ({ children }) => {
   const [doctors, setDoctors] = useState(assets.doctors || []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        // Get additional user data from Firestore
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          setUser({ ...user, ...userDoc.data() });
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      try {
+        if (currentUser) {
+          // Get additional user data from Firestore
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+          if (userDoc.exists()) {
+            setUser({ 
+              ...currentUser, 
+              ...userDoc.data(),
+              uid: currentUser.uid, // Ensure uid is always available
+              email: currentUser.email // Ensure email is always available
+            });
+          } else {
+            // If no user document exists yet, still set the user with auth data
+            setUser({
+              ...currentUser,
+              uid: currentUser.uid,
+              email: currentUser.email
+            });
+          }
         } else {
-          setUser(user);
+          setUser(null);
         }
-      } else {
-        setUser(null);
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        // Still set basic user if there's an error fetching additional data
+        if (currentUser) {
+          setUser({
+            uid: currentUser.uid,
+            email: currentUser.email
+          });
+        } else {
+          setUser(null);
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -48,19 +72,33 @@ const AppContextProvider = ({ children }) => {
       const result = await signInWithPopup(auth, provider);
       
       // Create/update user document in Firestore
-      const userRef = doc(db, "users", result.user.uid);
-      await setDoc(userRef, {
-        email: result.user.email,
-        displayName: result.user.displayName,
-        photoURL: result.user.photoURL,
-        lastLogin: new Date(),
-        role: "patient",
-      }, { merge: true });
+      try {
+        const userRef = doc(db, "users", result.user.uid);
+        await setDoc(userRef, {
+          email: result.user.email,
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL,
+          lastLogin: new Date(),
+          role: "patient",
+        }, { merge: true });
+      } catch (dbError) {
+        console.error("Error updating user document:", dbError);
+        // Even if Firestore update fails, still return the user
+      }
 
       return result.user;
     } catch (error) {
       console.error("Google sign in error:", error);
-      setError(error.message);
+      let errorMessage = "Failed to sign in with Google";
+      
+      // Handle specific Google sign-in errors
+      if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Sign-in popup was closed before completing. Please try again.";
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = "Sign-in popup was blocked by your browser. Please allow popups for this site.";
+      }
+
+      setError(errorMessage);
       throw error;
     } finally {
       setLoading(false);
@@ -68,16 +106,27 @@ const AppContextProvider = ({ children }) => {
   };
 
   const signInWithEmail = async (email, password) => {
+    if (!email || !password) {
+      const error = new Error("Email and password are required");
+      setError(error.message);
+      throw error;
+    }
+    
     try {
       setLoading(true);
       clearError();
       const result = await signInWithEmailAndPassword(auth, email, password);
       
       // Update last login in Firestore
-      const userRef = doc(db, "users", result.user.uid);
-      await setDoc(userRef, {
-        lastLogin: new Date()
-      }, { merge: true });
+      try {
+        const userRef = doc(db, "users", result.user.uid);
+        await setDoc(userRef, {
+          lastLogin: new Date()
+        }, { merge: true });
+      } catch (dbError) {
+        console.error("Error updating last login:", dbError);
+        // Even if Firestore update fails, still continue
+      }
 
       return result.user;
     } catch (error) {
@@ -97,6 +146,9 @@ const AppContextProvider = ({ children }) => {
         case "auth/wrong-password":
           errorMessage = "Incorrect password.";
           break;
+        case "auth/too-many-requests":
+          errorMessage = "Too many failed login attempts. Please try again later.";
+          break;
         default:
           errorMessage = error.message;
       }
@@ -109,20 +161,31 @@ const AppContextProvider = ({ children }) => {
   };
 
   const signUpWithEmail = async (email, password) => {
+    if (!email || !password) {
+      const error = new Error("Email and password are required");
+      setError(error.message);
+      throw error;
+    }
+    
     try {
       setLoading(true);
       clearError();
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
       // Create user document in Firestore
-      const userRef = doc(db, "users", result.user.uid);
-      await setDoc(userRef, {
-        email: result.user.email,
-        createdAt: new Date(),
-        lastLogin: new Date(),
-        role: "patient",
-        displayName: email.split("@")[0],
-      });
+      try {
+        const userRef = doc(db, "users", result.user.uid);
+        await setDoc(userRef, {
+          email: result.user.email,
+          createdAt: new Date(),
+          lastLogin: new Date(),
+          role: "patient",
+          displayName: email.split("@")[0],
+        });
+      } catch (dbError) {
+        console.error("Error creating user document:", dbError);
+        // Even if Firestore creation fails, still return the user
+      }
 
       return result.user;
     } catch (error) {
