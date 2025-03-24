@@ -112,9 +112,17 @@ const Appointment = () => {
 
       setBookingStatus({ loading: true, error: null, success: false });
 
+      // Make sure doctorInfo has all the necessary fields
+      const doctorData = {
+        name: docInfo.name,
+        speciality: docInfo.speciality,
+        image: docInfo.image,
+        fees: docInfo.fees,
+        address: docInfo.address || { line1: "", line2: "" },
+      };
+
       const appointmentData = {
-        doctorId: docId,
-        doctorInfo: docInfo,
+        doctorInfo: doctorData,
         appointmentDate: selectedDate,
         appointmentTime: selectedTime,
         patientInfo: {
@@ -122,10 +130,9 @@ const Appointment = () => {
           email: user.email,
           userId: user.uid,
         },
-        status: "pending",
-        createdAt: new Date(),
       };
 
+      console.log("Booking appointment with data:", appointmentData);
       await bookAppointment(docId, appointmentData);
       
       setBookingStatus({
@@ -137,6 +144,7 @@ const Appointment = () => {
       // Navigate to appointments page after successful booking
       navigate("/my-appointments");
     } catch (error) {
+      console.error("Appointment booking error:", error);
       setBookingStatus({
         loading: false,
         error: error.message || "Failed to book appointment",
@@ -296,7 +304,7 @@ const Appointment = () => {
         <h2 className="text-xl font-semibold mb-4">Similar Doctors</h2>
         <RelatedDoctors
           speciality={docInfo.speciality}
-          currentDocId={docInfo._id}
+          docId={docInfo._id}
         />
       </div>
     </div>
