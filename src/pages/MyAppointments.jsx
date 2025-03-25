@@ -9,7 +9,7 @@ const MyAppointments = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Fetch appointments directly from Firestore
+  
   useEffect(() => {
     const fetchUserAppointments = async () => {
       if (!user) {
@@ -20,16 +20,16 @@ const MyAppointments = () => {
       try {
         setLoading(true);
         
-        // Get Firebase dependencies from context
+        
         const { db } = await import("../firebase");
         const { collection, query, where, getDocs } = await import("firebase/firestore");
         
-        // Query appointments for the current user
+       
         const appointmentsRef = collection(db, "appointments");
         const q = query(appointmentsRef, where("userId", "==", user.uid));
         const querySnapshot = await getDocs(q);
         
-        // Process results
+       
         const appointmentsList = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
@@ -53,20 +53,20 @@ const MyAppointments = () => {
     fetchUserAppointments();
   }, [user]);
 
-  // Handle appointment cancellation
+  
   const handleCancelAppointment = async (appointmentId) => {
     try {
       setLoading(true);
       
-      // Get Firebase dependencies
+     
       const { db } = await import("../firebase");
       const { doc, updateDoc } = await import("firebase/firestore");
       
-      // Update the appointment status
+     
       const appointmentRef = doc(db, "appointments", appointmentId);
       await updateDoc(appointmentRef, { status: "cancelled" });
       
-      // Update local state
+      
       setAppointments(prev => 
         prev.map(apt => 
           apt.id === appointmentId ? { ...apt, status: "cancelled" } : apt
@@ -82,7 +82,7 @@ const MyAppointments = () => {
     }
   };
 
-  // Loading state
+  
   if (contextLoading || loading) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
@@ -91,7 +91,7 @@ const MyAppointments = () => {
     );
   }
 
-  // Error state
+  
   if (error) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-red-500">
@@ -106,7 +106,7 @@ const MyAppointments = () => {
     );
   }
 
-  // Not logged in state
+ 
   if (!user) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
@@ -121,7 +121,7 @@ const MyAppointments = () => {
     );
   }
 
-  // Empty appointments state
+  
   if (appointments.length === 0) {
     return (
       <div className="min-h-[60vh]">
