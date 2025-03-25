@@ -38,23 +38,23 @@ const Appointment = () => {
     setDocSlots([]);
     let slots = [];
     
-    // Get next 7 days
+   
     const today = new Date();
     for (let i = 0; i < 7; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       
-      // Skip Sundays (assuming doctors don't work on Sundays)
+      
       if (date.getDay() === 0) continue;
       
       const timeSlots = [];
       let startHour = date.getDate() === today.getDate() ? 
         Math.max(10, date.getHours() + 1) : 10;
       
-      // Generate time slots from 10 AM to 7 PM
+     
       for (let hour = startHour; hour < 19; hour++) {
         for (let minute of [0, 30]) {
-          // Skip past times for today
+        
           if (date.getDate() === today.getDate() && 
               hour === today.getHours() && 
               minute <= today.getMinutes()) {
@@ -112,7 +112,7 @@ const Appointment = () => {
 
       setBookingStatus({ loading: true, error: null, success: false });
 
-      // Make sure doctorInfo has all the necessary fields
+     
       const doctorData = {
         name: docInfo.name,
         speciality: docInfo.speciality,
@@ -141,7 +141,7 @@ const Appointment = () => {
         success: true,
       });
       
-      // Navigate to appointments page after successful booking
+     
       navigate("/my-appointments");
     } catch (error) {
       console.error("Appointment booking error:", error);
