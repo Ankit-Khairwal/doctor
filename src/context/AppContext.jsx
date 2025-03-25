@@ -24,17 +24,17 @@ const AppContextProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       try {
         if (currentUser) {
-          // Get additional user data from Firestore
+          
           const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           if (userDoc.exists()) {
             setUser({ 
               ...currentUser, 
               ...userDoc.data(),
-              uid: currentUser.uid, // Ensure uid is always available
-              email: currentUser.email // Ensure email is always available
+              uid: currentUser.uid, 
+              email: currentUser.email 
             });
           } else {
-            // If no user document exists yet, still set the user with auth data
+           
             setUser({
               ...currentUser,
               uid: currentUser.uid,
@@ -46,7 +46,7 @@ const AppContextProvider = ({ children }) => {
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
-        // Still set basic user if there's an error fetching additional data
+        
         if (currentUser) {
           setUser({
             uid: currentUser.uid,
@@ -72,7 +72,7 @@ const AppContextProvider = ({ children }) => {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
-      // Create/update user document in Firestore
+     
       try {
         const userRef = doc(db, "users", result.user.uid);
         await setDoc(userRef, {
@@ -84,7 +84,7 @@ const AppContextProvider = ({ children }) => {
         }, { merge: true });
       } catch (dbError) {
         console.error("Error updating user document:", dbError);
-        // Even if Firestore update fails, still return the user
+        
       }
 
       return result.user;
@@ -92,7 +92,7 @@ const AppContextProvider = ({ children }) => {
       console.error("Google sign in error:", error);
       let errorMessage = "Failed to sign in with Google";
       
-      // Handle specific Google sign-in errors
+      
       if (error.code === 'auth/popup-closed-by-user') {
         errorMessage = "Sign-in popup was closed before completing. Please try again.";
       } else if (error.code === 'auth/popup-blocked') {
@@ -118,7 +118,7 @@ const AppContextProvider = ({ children }) => {
       clearError();
       const result = await signInWithEmailAndPassword(auth, email, password);
       
-      // Update last login in Firestore
+      
       try {
         const userRef = doc(db, "users", result.user.uid);
         await setDoc(userRef, {
@@ -126,7 +126,7 @@ const AppContextProvider = ({ children }) => {
         }, { merge: true });
       } catch (dbError) {
         console.error("Error updating last login:", dbError);
-        // Even if Firestore update fails, still continue
+        
       }
 
       return result.user;
@@ -173,7 +173,7 @@ const AppContextProvider = ({ children }) => {
       clearError();
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Create user document in Firestore
+      
       try {
         const userRef = doc(db, "users", result.user.uid);
         await setDoc(userRef, {
@@ -185,7 +185,7 @@ const AppContextProvider = ({ children }) => {
         });
       } catch (dbError) {
         console.error("Error creating user document:", dbError);
-        // Even if Firestore creation fails, still return the user
+        
       }
 
       return result.user;
@@ -240,7 +240,7 @@ const AppContextProvider = ({ children }) => {
         throw new Error("Please sign in to book an appointment");
       }
 
-      // Create the appointment in Firestore
+      
       const appointment = {
         userId: user.uid,
         doctorId,
@@ -249,7 +249,7 @@ const AppContextProvider = ({ children }) => {
         appointmentTime: appointmentData.appointmentTime,
         patientInfo: appointmentData.patientInfo,
         status: "pending",
-        createdAt: new Date().toISOString(), // Store as ISO string instead of Date object
+        createdAt: new Date().toISOString(), 
       };
 
       const docRef = await addDoc(collection(db, "appointments"), appointment);
@@ -281,12 +281,12 @@ const AppContextProvider = ({ children }) => {
         appointmentsList.push({
           id: doc.id,
           ...data,
-          // Ensure createdAt is properly formatted
+         
           createdAt: data.createdAt || new Date().toISOString(),
         });
       });
       
-      // Sort appointments by date (newest first)
+     
       appointmentsList.sort((a, b) => {
         const dateA = new Date(a.appointmentDate + " " + a.appointmentTime);
         const dateB = new Date(b.appointmentDate + " " + b.appointmentTime);
@@ -311,7 +311,7 @@ const AppContextProvider = ({ children }) => {
       const appointmentRef = doc(db, "appointments", appointmentId);
       await setDoc(appointmentRef, { status: "cancelled" }, { merge: true });
       
-      // Update local state
+      
       setAppointments(prevAppointments => 
         prevAppointments.map(appointment => 
           appointment.id === appointmentId 
