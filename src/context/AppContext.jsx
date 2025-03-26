@@ -154,6 +154,43 @@ const AppContextProvider = ({ children }) => {
     }
   };
 
+  // Add the bookAppointment function
+  const bookAppointment = async (doctorId, appointmentData) => {
+    if (!user) {
+      const error = new Error("You must be logged in to book an appointment");
+      setError(error.message);
+      throw error;
+    }
+    
+    try {
+      setLoading(true);
+      clearError();
+      
+      // Add the userId to ensure we can query appointments by user
+      const dataToSave = {
+        ...appointmentData,
+        doctorId,
+        userId: user.uid,
+        status: "scheduled",
+        createdAt: new Date()
+      };
+      
+      // Add the appointment to the Firestore collection
+      const appointmentRef = await addDoc(collection(db, "appointments"), dataToSave);
+      
+      // Fetch the updated list of appointments
+      await fetchAppointments();
+      
+      return { id: appointmentRef.id, ...dataToSave };
+    } catch (error) {
+      console.error("Error booking appointment:", error);
+      setError("Failed to book appointment");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       fetchAppointments();
@@ -173,6 +210,7 @@ const AppContextProvider = ({ children }) => {
     doctors,
     appointments,
     fetchAppointments, // Export the function to make it available to other components
+    bookAppointment, // Add the bookAppointment function to the context
   };
 
   return (
