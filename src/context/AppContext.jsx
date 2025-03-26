@@ -96,8 +96,16 @@ const AppContextProvider = ({ children }) => {
       return result.user;
     } catch (error) {
       console.error("Email sign up error:", error);
-      setError("Failed to create account");
-      throw error;
+      
+      // Handle specific Firebase error codes
+      if (error.code === "auth/email-already-in-use") {
+        const errorMessage = "This email is already registered. Please use a different email or sign in instead.";
+        setError(errorMessage);
+        throw new Error(errorMessage);
+      } else {
+        setError("Failed to create account");
+        throw error;
+      }
     } finally {
       setLoading(false);
     }
@@ -112,6 +120,35 @@ const AppContextProvider = ({ children }) => {
       console.error("Sign out error:", error);
       setError(error.message);
       throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add the fetchAppointments function
+  const fetchAppointments = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      clearError();
+      
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("userId", "==", user.uid)
+      );
+      
+      const appointmentsSnapshot = await getDocs(appointmentsQuery);
+      const appointmentsList = [];
+      
+      appointmentsSnapshot.forEach((doc) => {
+        appointmentsList.push({ id: doc.id, ...doc.data() });
+      });
+      
+      setAppointments(appointmentsList);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      setError("Failed to fetch appointments");
     } finally {
       setLoading(false);
     }
@@ -135,6 +172,7 @@ const AppContextProvider = ({ children }) => {
     logout,
     doctors,
     appointments,
+    fetchAppointments, // Export the function to make it available to other components
   };
 
   return (

@@ -9,6 +9,7 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [localError, setLocalError] = useState("");
+  const [showLoginLink, setShowLoginLink] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -22,6 +23,15 @@ const Signup = () => {
       setLocalError("");
     };
   }, [clearError]);
+
+  // Check if the error contains "already registered" to show login link
+  useEffect(() => {
+    if (error && error.includes("already registered")) {
+      setShowLoginLink(true);
+    } else {
+      setShowLoginLink(false);
+    }
+  }, [error]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,7 +57,7 @@ const Signup = () => {
       await signUpWithEmail(email, password);
     } catch (error) {
       console.error("Signup error:", error);
-      setLocalError(error.message || "Failed to create account. Please try again.");
+      // Local error handling is not needed since AppContext now handles the specific errors
     }
   };
 
@@ -64,6 +74,13 @@ const Signup = () => {
         {displayError && (
           <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
             <p className="text-sm text-red-700">{displayError}</p>
+            {showLoginLink && (
+              <div className="mt-2">
+                <Link to="/login" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+                  Go to login page
+                </Link>
+              </div>
+            )}
           </div>
         )}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

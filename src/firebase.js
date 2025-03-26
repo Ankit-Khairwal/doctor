@@ -15,3 +15,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+/* 
+IMPORTANT NOTICE FOR FIREBASE AUTHENTICATION:
+
+To fix the domain authorization issue, you need to add your domain 
+(doctor-seven-hazel.vercel.app) to the OAuth redirect domains list in the Firebase console:
+
+1. Go to Firebase console: https://console.firebase.google.com/
+2. Select your project
+3. Navigate to: Authentication -> Settings -> Authorized domains tab
+4. Click "Add domain" and add: doctor-seven-hazel.vercel.app
+
+This will allow Firebase authentication to work properly on your deployed site.
+*/
